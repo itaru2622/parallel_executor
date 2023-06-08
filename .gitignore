@@ -1,0 +1,10 @@
+# docs
+**/*.md
+
+# data
+**/*.xls
+**/*.csv
+**/*.json
+
+# logs
+**/logs*
