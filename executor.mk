@@ -19,6 +19,11 @@ ifneq ($(origin limit),undefined) # when limit is defined, apply it by head comm
 preproc +=| head --lines ${limit}
 endif
 
+ifeq ($(sudo),true)               # when sudo is defined as true, execute process with sudo
+cmdsudo="sudo"
+else
+cmdsudo=
+endif
 
 #stop to check
 _stop_to_check:
@@ -28,6 +33,8 @@ _stop_to_check:
 	@echo "    cmd: ${cmd}"
 	@echo "   args: ${args}"
 	@echo "   oDir: ${oDir}"
+	@echo " joblog: ${joblog}"
+	@echo "   sudo: ${sudo} cmdsudo:${cmdsudo}"
 	@echo ""
 	@echo "how to use this makefile: pipe as below..."
 	@echo ""
@@ -45,24 +52,25 @@ traceroute: ${oDir}
 	$(eval cmd=traceroute)
 	$(eval args=-I -n ${args})
 	$(eval env=LANG=C ${env})
-	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "sudo ${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
+	$(eval cmdsudo=sudo)
+	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${cmdsudo} ${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
 
 ping:  ${oDir}
 	$(eval cmd=ping)
 	$(eval args=-O -c 21 ${args})
 	$(eval env=LANG=C ${env})
-	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
+	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${cmdsudo} ${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
 
 checkalives: ${oDir}
 	$(eval cmd=ping)
 	$(eval args=-O -c 3 ${args})
 	$(eval env=LANG=C ${env})
-	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
+	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${cmdsudo} ${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
 
 exec:
 ifneq ($(origin cmd),undefined) # only when cmd is defined in somehow...
 	mkdir -p ${oDir}/stdout ${oDir}/stderr
-	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${env} ${cmd} ${args} {}   1> >(tee ${oDir}/stdout/{} >&1)  2> >(tee ${oDir}/stderr/{} >&2) " || true
+	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${cmdsudo} ${env} ${cmd} ${args} {}   1> >(tee ${oDir}/stdout/{} >&1)  2> >(tee ${oDir}/stderr/{} >&2) " || true
 else
 	@echo 'required cmd is not given,  use make -f executor.mk exec cmd="..." '
 endif
