@@ -455,7 +455,10 @@ if __name__ == '__main__':
 
     ldict = logparser.mkData(dstColName=args.dstColName, aliveColName=args.aliveColName, prefixDataColName=args.prefixDataColName, includes_err=True)
     df = pd.DataFrame( ldict)
-    df.to_csv(args.output, index=False)
+    if args.output.endswith('.xlsx'):
+        df.to_excel(args.output, index=False)
+    else:
+        df.to_csv(args.output, index=False)
 
     if args.histogram:
         recs,_ = logparser.getResults()
