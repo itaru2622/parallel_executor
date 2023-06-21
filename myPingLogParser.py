@@ -322,12 +322,14 @@ class PingLogParser(object):
         return dict(zip(keys, vals))
 
 
-    def mkData(self, dstColName:str, aliveColName:str, prefixDataColName:str='rtt', includes_err:bool=True) -> list[dict[str,Any]]:
+    def mkData(self, dstColName:str, aliveColName:str, src:str=None, prefixDataColName:str='rtt', includes_err:bool=True) -> list[dict[str,Any]]:
         '''make data for output from records as list of dict
 
         Args:
             output(str):            path to output.
             dstColName(str):        the name of dest column,  for CSV header.
+            aliveColName(str):      the name of 'alive' column, for CSV header.
+            src(str):               the sender of ping, to record it within data.
             prefixDataColName(str): the name of Data columns, for CSV header.
             includes_error(bool):   output error messages found in Ping Log file(True), or not(False).
 
@@ -346,6 +348,8 @@ class PingLogParser(object):
         #
 
         keys = [dstColName, aliveColName]                      # keys: initial value
+        if src is not None:                                    #   add 'src' column when it specified.
+           keys.append("src")
 
         #    remained keys for raw data part, for pretty-printing
         ndigits = len(str(count-1))
@@ -365,6 +369,8 @@ class PingLogParser(object):
 
         for dst,hrec in recs.items():                          # make values
               vals = [ dst, hrec.isAlive() ]                   #   inivial value.
+              if src is not None:                              #   add src in data when it specified.
+                  vals.append(src)
               rtt = hrec.getRTT()
               for n in range(len(rtt),count):                  # !!! fill None when val is missing, by timeout etc.
                   rtt.append(None)
@@ -398,6 +404,7 @@ if __name__ == '__main__':
     parser.add_argument('-d','--dstColName',        type=str, default='dest',          help='column name of dest in output csv header')
     parser.add_argument('-a','--aliveColName',      type=str, default='alive',         help='column name of "alive" in output csv header')
     parser.add_argument('-p','--prefixDataColName', type=str, default='rtt',           help='prefix for data column names in output csv header')
+    parser.add_argument('-s','--src',               type=str, default=None,            help='sender of ping, to record it within data')
     parser.add_argument('-v','--verbose',           action="store_true",               help='verbose output or not')
     parser.add_argument('-H','--histogram',         action="store_true",               help='print histograms in stdout')
     args = parser.parse_args()
@@ -453,7 +460,7 @@ if __name__ == '__main__':
     for path, dest in logFiles.items():
         logparser.run(path, dest, verbose=args.verbose)
 
-    ldict = logparser.mkData(dstColName=args.dstColName, aliveColName=args.aliveColName, prefixDataColName=args.prefixDataColName, includes_err=True)
+    ldict = logparser.mkData(dstColName=args.dstColName, aliveColName=args.aliveColName, src=args.src, prefixDataColName=args.prefixDataColName, includes_err=True)
     df = pd.DataFrame( ldict)
     if args.output.endswith('.xlsx'):
         df.to_excel(args.output, index=False)
