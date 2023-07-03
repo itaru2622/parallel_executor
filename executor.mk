@@ -67,6 +67,17 @@ checkalives: ${oDir}
 	$(eval env=LANG=C ${env})
 	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${cmdsudo} ${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
 
+# lookup DNS
+dig: ${oDir}
+	$(eval cmd=dig)
+	$(eval args=${args})
+	$(eval env=LANG=C ${env})
+ifeq ($(rev),true)               # when rev is defined as true, execute process with rev
+	$(eval args+=${args} -x)
+endif
+	${preproc} | parallel --eta -k -t -j ${N} --joblog ${joblog}    "${cmdsudo} ${env} ${cmd} ${args} {}   1> >(tee ${oDir}/{} >&1) " || true
+
+
 exec:
 ifneq ($(origin cmd),undefined) # only when cmd is defined in somehow...
 	mkdir -p ${oDir}/stdout ${oDir}/stderr
