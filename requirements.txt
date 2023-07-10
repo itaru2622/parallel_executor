@@ -2,3 +2,4 @@ numpy
 pydantic
 pandas
 openpyxl
+jc
